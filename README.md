@@ -1,52 +1,61 @@
-# Systematic Momentum Strategy (Python) — Backtest + Memo
+# Sector Momentum Rotation (GICS Sector ETF Strategy)
 
-A rules-based **cross-sectional momentum** strategy tested on the **top 30 S&P 500 constituents by index weight** (as of current list), with **SPY** as benchmark.
+This project implements and evaluates a rules-based **sector rotation** strategy using long-lived **Select Sector SPDR ETFs**. The goal is to test momentum as a **macro allocation tool** (asset allocation across sectors) rather than stock picking.
 
-## What’s inside
-- `notebooks/momentum_backtest.ipynb` — full analysis + backtest
-- `reports/strategy_memo.md` — 1–2 page strategy memo (print-friendly)
-- `data/results_monthly.csv` — monthly returns + turnover
-- `data/weights_monthly.csv` — monthly portfolio weights
-- `figures/light/` — charts for PDF/memo
-- `figures/dark/` — optional “codey” dark charts for style
+## Universe (Point-in-Time Investable)
+To avoid survivorship and look-ahead bias from selecting “today’s winners,” the universe is a fixed set of highly liquid sector ETFs with long histories:
 
-## Strategy (Baseline)
-- Signal: **12–1 momentum** (past 12-month return, skipping most recent month)
-- Selection: top 10 stocks monthly (ranked by momentum)
-- Weighting: equal weight
-- Rebalance: monthly
-- Costs: 10 bps × monthly turnover (turnover from weight changes)
+- XLB (Materials), XLE (Energy), XLF (Financials), XLI (Industrials), XLK (Technology),
+  XLP (Consumer Staples), XLU (Utilities), XLV (Health Care), XLY (Consumer Discretionary)
+- Benchmark: SPY
 
-## Results (Net of Costs, 2021-10 to 2026-01)
-Baseline (12–1 momentum, top-10, monthly rebalance; costs = 10 bps × turnover):
-- Momentum CAGR: **28.12%** vs SPY **13.27%**
-- Sharpe (rf=0): **1.24** vs **0.87**
-- Max drawdown: **-20.10%** vs **-23.93%**
-- Annualized vol: **21.97%** vs **15.73%**
-- Avg monthly turnover: **0.169 (~16.9%)**
+## Strategy Overview
+At each month-end:
+1. Convert daily prices to **month-end prices**.
+2. Compute **12–1 momentum** for each sector ETF (12-month total return, skipping the most recent month to reduce short-term reversal effects).
+3. Rank sectors by momentum and hold the **top 3 sectors**, equally weighted.
+4. Rebalance monthly.
 
-## Results Sector Strategy
-Risk-free adjusted performance: Sharpe ratios are computed on excess returns using the Fama–French monthly risk-free rate (RF). Over 1999–2025, the sector momentum strategy achieved a higher excess-return Sharpe than SPY (0.514 vs 0.477), with the strongest relative performance during 2000–2010.
+### Transaction Costs
+Strategy performance is reported **net of costs**, modeled as:
+- **cost = turnover × 10 bps**, where turnover is the one-way change in portfolio weights.
 
-Controls & validation:
-- Equal-weight Top-30 benchmark: **28.1% vs 27.7% CAGR** (momentum vs EW Top-30)
-- FF5 attribution (HAC): **α ≈ 1.04%/month** (t=2.62, p=0.0088), market beta ~**1.09**
-- Walk-forward OOS (expanding window, net of costs): **Sharpe ≈ 1.92**
-- Vol targeting overlay implemented (20% target, de-risk only; scale capped at 1.0)
+### Risk Management (Volatility Targeting)
+A volatility targeting overlay is applied to maintain a stable risk budget:
+- Target volatility: **20% annualized**
+- Vol estimate: **12-month rolling volatility of monthly returns**
+- **Lagged scaling** (scale used for month *t* is estimated from data available through month *t–1*) to avoid lookahead.
+- **De-risk only** (scaling capped at 1.0; no leverage).
 
-Robustness (CAGR):
-- 3–1 momentum: **35.48%**
-- 6–1 momentum: **33.65%**
-- 12–1 momentum: **28.37%**
+## Evaluation Framework
+The strategy is evaluated across multiple market regimes to reduce “cherry-picking”:
+
+- **Full Period:** 1999–2026  
+- **Sub-Period 1:** 2000–2010 (“Lost Decade”)  
+- **Sub-Period 2:** 2011–2026 (“Post-GFC Bull”)
+
+Metrics reported include CAGR, volatility, max drawdown, turnover, and Sharpe ratios.
+Sharpe is also computed on an **excess-return basis** using the **Fama–French monthly risk-free rate (RF)**.
+
+## Key Results (High Level)
+- Over the **full sample**, the strategy is comparable to SPY with improved drawdown behavior.
+- The strategy’s **strongest relative performance occurs during 2000–2010**, consistent with sector rotation helping in choppy/sideways equity regimes.
+- During the **post-2011 bull market**, SPY tends to lead, consistent with broad equity beta dominating in extended bull trends.
+
+See saved figures for regime equity curves and the “Lost Decade” comparison.
+
+## Factor Attribution (FF5 + MOM)
+To understand what drives returns (and avoid mistaking unintended exposures for “alpha”), monthly excess returns are regressed on:
+- Fama–French 5 factors (Mkt-RF, SMB, HML, RMW, CMA)
+- **Momentum (MOM)** factor
+- HAC (Newey–West) standard errors
+
+Results indicate the strategy has meaningful exposure to **market beta** and a statistically significant loading on **momentum**, consistent with its construction. The intercept (alpha) is not statistically significant after controlling for these factors, which supports an interpretation of the strategy as systematic factor-driven sector rotation rather than unexplained alpha.
+
+## Outputs
+- Figures (light/dark): `figures/`
+- Saved charts include regime equity curves and a “Lost Decade” comparison chart.
 
 ## Notes / Limitations
-- Universe defined using current top constituents (composition effects).
-- Sample starts when full data coverage + lookback availability begins.
-- Future work: point-in-time constituents, volatility targeting, larger universes, regime filters.
-
-## How to run
-1. Create venv + install dependencies:
-   ```bash
-   py -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   py -m pip install -r requirements.txt
+- Sector definitions evolve over time; this implementation uses the long-lived Select Sector SPDR ETF baskets for consistency across 1999–2026.
+- Results are sensitive to universe, rebalance frequency, and transaction cost assumptions.
