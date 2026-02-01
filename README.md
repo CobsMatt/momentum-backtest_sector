@@ -53,22 +53,22 @@ Key results (Full period: 2001-02 → 2026-01)
 
 Growth of $1 (rebased to start):
 
-Base: 8.48×
+Base: 8.31×
 
-Macro overlay: 7.02×
+Macro overlay: 6.95×
 
-SPY: 8.77×
+SPY: 7.93×
 
 Risk & return summary (annualized, rf=0 Sharpe):
 
-Series	Ann Return	Ann Vol	Sharpe	Max Drawdown
-Base	8.96%	14.48%	0.619	-39.06%
-Macro overlay	8.14%	12.92%	0.630	-33.43%
-SPY	9.11%	14.92%	0.610	-50.78%
+Series	      Ann Return	Ann Vol	 Sharpe	 Max Drawdown
+Base	        8.96%	      14.48%	 0.619	  -39.06%
+Macro overlay	8.14%	      12.92%	 0.630	  -33.43%
+SPY	          9.11%	      14.92%	 0.610	  -50.78%
 
 Interpretation:
 
-Base is the growth-maximizing version in this sample (nearly matches SPY return, smaller drawdown).
+Base is the growth-maximizing strategy in this sample (nearly matches SPY return, smaller drawdown).
 
 Macro overlay is the risk-managed version: lower volatility and a meaningfully smaller max drawdown, at the cost of some CAGR.
 
@@ -171,4 +171,5 @@ No leverage in this version (scale capped at 1.0)
 How to run
 
 Open and run sector_momentum_main.ipynb top-to-bottom (Restart kernel → Run All). The notebook exports tables to reports_sector/ and charts to figures_sector/.
+
 
