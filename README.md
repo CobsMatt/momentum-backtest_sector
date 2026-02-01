@@ -1,24 +1,27 @@
 # Sector Momentum Rotation (US) — Base vs Risk-Managed Overlay (2001–2026)
 # What this project is
 
-A reproducible backtest of a monthly US sector rotation strategy using sector ETFs, benchmarked against SPY (S&P 500 ETF). The project includes:
+In summary, it is a reproducible backtest of a monthly US sector rotation strategy that uses sector ETFs, benchmarked against SPY (S&P 500 ETF). The project includes:
 
-Base strategy: fully invested sector momentum rotation (top sectors by 12–1 momentum, monthly rebalance, costs included)
+- "base" strategy: fully invested sector momentum rotation (top sectors by 12–1, momentum rebalanced monthly, costs included)
 
-Risk-managed overlay: the same base strategy with macro regime + volatility targeting that can reduce exposure (hold cash) in stressed regimes
+- Risk-managed overlay: the same base strategy but with macro regime + volatility targeting that can reduce exposure (held cash) in stressed regimes
 
-Sample: monthly data from 2001-02 to 2026-01 (300 month-end observations; 299 monthly returns).
+Sample: monthly data from 2001-02 to 2026-01 (300 month end observations; 299 monthly returns).
 
-How it works
-1) Signal: 12–1 momentum (skip most recent month)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# How it works:
+
+1) Signal: 12–1 momentum (skips most recent month (in order to avoid short-term reversal))
 
 Each month:
 
-compute each sector’s return over the past 12 months excluding the most recent month
+It computes each sector’s return over the past 12 months excluding the most recent month
 
-rank sectors by that momentum score
+it then ranks sectors by that momentum score
 
-2) Portfolio construction (Base)
+2) Portfolio construction (Base strategy)
 
 hold Top 3 sectors
 
@@ -30,21 +33,21 @@ rebalance monthly
 
 transaction costs modeled as turnover × 10 bps
 
-base series is reported net of modeled costs
+base series is reported as net of modeled costs
 
-4) Risk-managed overlay (Macro + Vol Targeting)
+4) Risk-managed overlay (Macro + Vol Targeting) (refered to (here) as maro overlay strategy as well)
 
-On top of the base strategy:
+In addition to the base strategy:
 
-apply a lagged volatility target (rolling realized vol, scale applied with a one-month lag)
+apply a lagged volatility target (rolling realized vol, scale applied with a one month lag)
 
-use a 2-state macro regime (risk-on/risk-off) to set different vol targets:
+use a 2-state macro regime (risk on/risk off) to set different vol targets:
 
 Risk-on target ≈ 15%
 
 Risk-off target ≈ 10%
 
-when scale < 1, the remainder is held as cash (cash return assumed ~0% unless explicitly modeled)
+when scale < 1, the remainder is held as cash (cash return assumed ~0%)
 
 Key results (Full period: 2001-02 → 2026-01)
 
@@ -168,3 +171,4 @@ No leverage in this version (scale capped at 1.0)
 How to run
 
 Open and run sector_momentum_main.ipynb top-to-bottom (Restart kernel → Run All). The notebook exports tables to reports_sector/ and charts to figures_sector/.
+
