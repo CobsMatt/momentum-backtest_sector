@@ -1,61 +1,170 @@
-# Sector Momentum Rotation (GICS Sector ETF Strategy)
+# Sector Momentum Rotation (US) — Base vs Risk-Managed Overlay (2001–2026)
+# What this project is
 
-This project implements and evaluates a rules-based **sector rotation** strategy using long-lived **Select Sector SPDR ETFs**. The goal is to test momentum as a **macro allocation tool** (asset allocation across sectors) rather than stock picking.
+A reproducible backtest of a monthly US sector rotation strategy using sector ETFs, benchmarked against SPY (S&P 500 ETF). The project includes:
 
-## Universe (Point-in-Time Investable)
-To avoid survivorship and look-ahead bias from selecting “today’s winners,” the universe is a fixed set of highly liquid sector ETFs with long histories:
+Base strategy: fully invested sector momentum rotation (top sectors by 12–1 momentum, monthly rebalance, costs included)
 
-- XLB (Materials), XLE (Energy), XLF (Financials), XLI (Industrials), XLK (Technology),
-  XLP (Consumer Staples), XLU (Utilities), XLV (Health Care), XLY (Consumer Discretionary)
-- Benchmark: SPY
+Risk-managed overlay: the same base strategy with macro regime + volatility targeting that can reduce exposure (hold cash) in stressed regimes
 
-## Strategy Overview
-At each month-end:
-1. Convert daily prices to **month-end prices**.
-2. Compute **12–1 momentum** for each sector ETF (12-month total return, skipping the most recent month to reduce short-term reversal effects).
-3. Rank sectors by momentum and hold the **top 3 sectors**, equally weighted.
-4. Rebalance monthly.
+Sample: monthly data from 2001-02 to 2026-01 (300 month-end observations; 299 monthly returns).
 
-### Transaction Costs
-Strategy performance is reported **net of costs**, modeled as:
-- **cost = turnover × 10 bps**, where turnover is the one-way change in portfolio weights.
+How it works
+1) Signal: 12–1 momentum (skip most recent month)
 
-### Risk Management (Volatility Targeting)
-A volatility targeting overlay is applied to maintain a stable risk budget:
-- Target volatility: **20% annualized**
-- Vol estimate: **12-month rolling volatility of monthly returns**
-- **Lagged scaling** (scale used for month *t* is estimated from data available through month *t–1*) to avoid lookahead.
-- **De-risk only** (scaling capped at 1.0; no leverage).
+Each month:
 
-## Evaluation Framework
-The strategy is evaluated across multiple market regimes to reduce “cherry-picking”:
+compute each sector’s return over the past 12 months excluding the most recent month
 
-- **Full Period:** 1999–2026  
-- **Sub-Period 1:** 2000–2010 (“Lost Decade”)  
-- **Sub-Period 2:** 2011–2026 (“Post-GFC Bull”)
+rank sectors by that momentum score
 
-Metrics reported include CAGR, volatility, max drawdown, turnover, and Sharpe ratios.
-Sharpe is also computed on an **excess-return basis** using the **Fama–French monthly risk-free rate (RF)**.
+2) Portfolio construction (Base)
 
-## Key Results (High Level)
-- Over the **full sample**, the strategy is comparable to SPY with improved drawdown behavior.
-- The strategy’s **strongest relative performance occurs during 2000–2010**, consistent with sector rotation helping in choppy/sideways equity regimes.
-- During the **post-2011 bull market**, SPY tends to lead, consistent with broad equity beta dominating in extended bull trends.
+hold Top 3 sectors
 
-See saved figures for regime equity curves and the “Lost Decade” comparison.
+equal-weight
 
-## Factor Attribution (FF5 + MOM)
-To understand what drives returns (and avoid mistaking unintended exposures for “alpha”), monthly excess returns are regressed on:
-- Fama–French 5 factors (Mkt-RF, SMB, HML, RMW, CMA)
-- **Momentum (MOM)** factor
-- HAC (Newey–West) standard errors
+rebalance monthly
 
-Results indicate the strategy has meaningful exposure to **market beta** and a statistically significant loading on **momentum**, consistent with its construction. The intercept (alpha) is not statistically significant after controlling for these factors, which supports an interpretation of the strategy as systematic factor-driven sector rotation rather than unexplained alpha.
+3) Trading frictions
 
-## Outputs
-- Figures (light/dark): `figures/`
-- Saved charts include regime equity curves and a “Lost Decade” comparison chart.
+transaction costs modeled as turnover × 10 bps
 
-## Notes / Limitations
-- Sector definitions evolve over time; this implementation uses the long-lived Select Sector SPDR ETF baskets for consistency across 1999–2026.
-- Results are sensitive to universe, rebalance frequency, and transaction cost assumptions.
+base series is reported net of modeled costs
+
+4) Risk-managed overlay (Macro + Vol Targeting)
+
+On top of the base strategy:
+
+apply a lagged volatility target (rolling realized vol, scale applied with a one-month lag)
+
+use a 2-state macro regime (risk-on/risk-off) to set different vol targets:
+
+Risk-on target ≈ 15%
+
+Risk-off target ≈ 10%
+
+when scale < 1, the remainder is held as cash (cash return assumed ~0% unless explicitly modeled)
+
+Key results (Full period: 2001-02 → 2026-01)
+
+Growth of $1 (rebased to start):
+
+Base: 8.48×
+
+Macro overlay: 7.02×
+
+SPY: 8.77×
+
+Risk & return summary (annualized, rf=0 Sharpe):
+
+Series	Ann Return	Ann Vol	Sharpe	Max Drawdown
+Base	8.96%	14.48%	0.619	-39.06%
+Macro overlay	8.14%	12.92%	0.630	-33.43%
+SPY	9.11%	14.92%	0.610	-50.78%
+
+Interpretation:
+
+Base is the growth-maximizing version in this sample (nearly matches SPY return, smaller drawdown).
+
+Macro overlay is the risk-managed version: lower volatility and a meaningfully smaller max drawdown, at the cost of some CAGR.
+
+Regime breakdown (tables generated by the notebook)
+Lost decade proxy (2001–2010)
+
+Base: 5.02% ann return, -39.06% max DD
+
+Macro overlay: 4.85% ann return, -33.43% max DD
+
+SPY: 2.04% ann return, -50.78% max DD
+
+Post-GFC bull (2011–2026)
+
+Base: 11.42% ann return, -19.94% max DD
+
+Macro overlay: 10.23% ann return, -19.01% max DD
+
+SPY: 13.88% ann return, -23.93% max DD
+
+Overlay exposure behavior (what the “risk overlay” actually does)
+
+From the exported vol_target_scale.csv / cash_weight.csv:
+
+Average exposure (scale): 0.894 (≈ 89.4% invested on average)
+
+Average cash weight: 10.6%
+
+Minimum scale: 0.446 (max cash ≈ 55.4%)
+
+Months with scale < 1: 43%
+
+Months with scale < 0.8: 26%
+
+This makes the overlay a risk-budget wrapper: it does not add leverage (cap=1.0), it only reduces exposure in higher-risk periods.
+
+Rolling 12-month performance (full sample)
+
+Best / worst rolling 12M returns from rolling12m_returns_base_macro_spy.csv:
+
+Base
+
+Best 12M: +53.61% (2021-03)
+
+Worst 12M: -32.99% (2009-02)
+
+Macro overlay
+
+Best 12M: +42.64% (2021-03)
+
+Worst 12M: -27.52% (2009-05)
+
+SPY
+
+Best 12M: +56.23% (2021-03)
+
+Worst 12M: -43.42% (2009-02)
+
+Outputs
+reports_sector/ (tables/data)
+
+monthly_returns_base_macro_spy.csv
+
+equity_curves_base_macro_spy.csv
+
+drawdowns_base_macro_spy.csv
+
+rolling12m_returns_base_macro_spy.csv
+
+vol_target_scale.csv
+
+cash_weight.csv
+
+weights_base_monthly_with_cash.csv
+
+weights_macro_effective_monthly_with_cash.csv
+
+figures_sector/ (charts)
+
+Light + dark equity curves and drawdowns for:
+
+Full period
+
+2000–2010 (proxy in data starts 2001)
+
+2011–2026
+
+Light + dark exposure chart (scale + cash weight)
+
+Assumptions & limitations
+
+Cash return assumed ~0% unless explicitly modeled
+
+Monthly rebalancing at month-end prices
+
+Macro series can be revised historically
+
+No leverage in this version (scale capped at 1.0)
+
+How to run
+
+Open and run sector_momentum_main.ipynb top-to-bottom (Restart kernel → Run All). The notebook exports tables to reports_sector/ and charts to figures_sector/.
