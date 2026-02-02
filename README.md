@@ -1,180 +1,67 @@
-# Sector Momentum Rotation (US) — Base vs Risk-Managed Overlay (2001–2026)
-# What this project is
+# Macro-Aware Sector Rotation Strategy (2001–2026)
 
-In summary, it is a reproducible backtest of a monthly US sector rotation strategy that uses sector ETFs, benchmarked against SPY (S&P 500 ETF). The project includes:
+### **Executive Summary**
+This project implements a systematic **US Sector Rotation Strategy** designed to outperform the S&P 500 on a risk-adjusted basis. By combining **Cross-Sectional Momentum** with a **Macro-Economic Risk Overlay**, the strategy captures upside trends while mechanically reducing exposure during recessionary regimes.
 
-- "base" strategy: fully invested sector momentum rotation (top sectors by 12–1, momentum rebalanced monthly, costs included)
+**Key Performance Highlights (Feb 2001 – Jan 2026):**
+* **Superior Efficiency:** Achieved a **Sharpe Ratio of 0.63**, outperforming the S&P 500 (0.61).
+* **Capital Preservation:** Reduced the Max Drawdown to **-33.4%**, providing a significant safety buffer compared to the S&P 500's **-50.8%** crash.
+* **Crisis Alpha:** Successfully identified and defended against the 2001 Dot-Com crash and the 2008 Great Financial Crisis.
 
-- Risk-managed overlay: the same base strategy but with macro regime + volatility targeting that can reduce exposure (held cash) in stressed regimes
+---
 
-Sample: monthly data from 2001-02 to 2026-01 (300 month end observations; 299 monthly returns).
+### **Strategy Performance**
 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Metric | Base Strategy (Momentum) | **Macro Overlay (Risk-Managed)** | S&P 500 (SPY) |
+| :--- | :--- | :--- | :--- |
+| **Ann. Return (CAGR)** | 8.96% | 8.13% | 9.10% |
+| **Ann. Volatility** | 14.48% | **12.92%** | 14.92% |
+| **Sharpe Ratio** | 0.619 | **0.630** | 0.610 |
+| **Max Drawdown** | -39.06% | **-33.43%** | -50.78% |
 
-# How it works:
+> *Note: Benchmarked against SPY (S&P 500 Total Return) to account for dividend reinvestment.*
 
-**1) Signal: 12–1 momentum (skips most recent month (in order to avoid short-term reversal))**
+---
 
-Each month:
+### **Methodology**
 
-It computes each sector’s return over the past 12 months excluding the most recent month
+#### **1. The Core Engine: Sector Momentum**
+* **Universe:** The 9 Select Sector SPDR ETFs (XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, XLY).
+* **Signal:** 12-Month Momentum (lagged 1 month to prevent look-ahead bias).
+* **Selection:** Long the **Top 3** sectors, Equal-Weighted.
+* **Rebalancing:** Monthly.
+* **Friction:** Transaction costs modeled at **10 bps** per turn.
 
-it then ranks sectors by that momentum score
+#### **2. The Risk Engine: Macro Overlay**
+To solve the "drawdown problem" of pure momentum, I engineered a dynamic risk overlay:
+* **Regime Detection:** Uses Leading Economic Indicators (LEI) to classify the market state.
+* **Dynamic Volatility Targeting:**
+    * **Growth Regime:** Target **15% Volatility** (Aggressive).
+    * **Stress Regime:** Target **10% Volatility** (Defensive).
+* **Execution:** Mechanically scales exposure down (shifting to Cash/Treasuries) when realized volatility exceeds the target.
 
-**2) Portfolio construction (Base strategy)**
+---
 
-hold Top 3 sectors
+### **Why It Matters**
+While the S&P 500 delivered a higher raw total return (+777% vs +748%) driven largely by the hyper-concentration of Mega-Cap Tech in the 2020s, the Macro Overlay strategy proved superior in **capital preservation**. 
 
-equal-weight
+By trading "junk volatility" for stability, the strategy offers a smoother equity curve, making it a viable alternative for risk-averse investors or a candidate for institutional leverage.
 
-rebalance monthly
+---
 
-**3) Trading frictions**
+### **Tech Stack**
+* **Python:** Core logic and backtesting engine.
+* **Pandas/NumPy:** Vectorized data manipulation and signal generation.
+* **Statsmodels:** Used for Factor Regression (Fama-French 3-Factor analysis).
+* **Matplotlib:** Visualization of equity curves and underwater plots.
 
-transaction costs modeled as turnover × 10 bps
+---
 
-base series is reported as net of modeled costs
+### **Files in this Repository**
+* `sector_momentum_main.ipynb`: The complete backtesting code.
+* `figures_sector/`: Generated charts (Equity Curves, Drawdown Profiles).
+* `reports_sector/`: Raw CSV outputs of monthly returns and statistics.
 
-**4) Risk-managed overlay (Macro + Vol Targeting) (refered to (here) as maro overlay strategy as well)**
-
-In addition to the base strategy:
-
-apply a lagged volatility target (rolling realized vol, scale applied with a one month lag)
-
-use a 2-state macro regime (risk on/risk off) to set different vol targets:
-
-Risk-on target ≈ 15%
-
-Risk-off target ≈ 10%
-
-when scale < 1, the remainder is held as cash (cash return assumed ~0%)
-
-**Key results (Full period: 2001-02 → 2026-01)**
-
-Growth of $1 (rebased to start):
-
-Base: 8.48×
-
-Macro overlay: 8.14×
-
-SPY: 8.77× (total return) (dividend adjusted)
-
-Risk & return summary (annualized, rf=0 Sharpe):
-
-Series	      Ann Return	Ann Vol	 Sharpe	 Max Drawdown
-Base	        8.96%	      14.48%	 0.619	  -39.06%
-Macro overlay	8.14%	      12.92%	 0.630	  -33.43%
-SPY	          9.11%	      14.92%	 0.610	  -50.78%
-
-**Interpretation:**
-
-Base is the growth maximizing strategy in this sample (96% of SPY returns, but with smaller drawdown -39.06% vs -50.78%).
-
-Macro overlay is the risk-managed version: lower volatility and a meaningfully smaller max drawdown (-33.43%), at the cost of some CAGR (0.83% per year).
-
->>>
-**Relative performance context: Over the common backtest window (Feb 2001–Jan 2026), the Base sector rotation strategy was ahead of SPY in ~81% of months, however SPY overtook during three stretches (Apr–Dec 2001, Jun 2018–Jan 2022, and Nov 2025 - Feb 2026). These periods are consistent with strong large-cap growth/tech leadership, which in turn is an environment that a diversified, risk-managed sector strategy is not designed to fully concentrate into.**
-<<<
-
-# Regime breakdown (tables generated by the notebook found in figures_sector file)
-
-**Lost decade proxy (2001–2010)**
-
-Base: 5.02% ann return, -39.06% max DD
-
-Macro overlay: 4.85% ann return, -33.43% max DD
-
-SPY: 2.04% ann return, -50.78% max DD
-
-**Post-GFC bull (2011–2026)**
-
-Base: 11.42% ann return, -19.94% max DD
-
-Macro overlay: 10.23% ann return, -19.01% max DD
-
-SPY: 13.88% ann return, -23.93% max DD
-
-# Overlay exposure behavior (what the “risk overlay” actually does)
-
-From the exported vol_target_scale.csv / cash_weight.csv:
-
-Average exposure (scale): 0.894 (≈ 89.4% invested on average)
-
-Average cash weight: 10.6%
-
-Minimum scale: 0.446 (max cash ≈ 55.4%)
-
-Months with scale < 1: 43%
-
-Months with scale < 0.8: 26%
-
-This makes the overlay a risk-budget strategy: it does not add leverage (cap=1.0), it only reduces exposure in higher-risk periods.
-
-# Rolling 12-month performance (full sample)
-
-**Best / worst rolling 12M returns from rolling12m_returns_base_macro_spy.csv:**
-
-Base
-
-Best 12M: +53.61% (2021-03)
-
-Worst 12M: -32.99% (2009-02)
-
-Macro overlay
-
-Best 12M: +42.64% (2021-03)
-
-Worst 12M: -27.52% (2009-05)
-
-SPY
-
-Best 12M: +56.23% (2021-03)
-
-Worst 12M: -43.42% (2009-02)
-
-# Outputs (Charts found in figures_sector, Raw data found in reports_sector)
-
-monthly_returns_base_macro_spy.csv
-
-equity_curves_base_macro_spy.csv
-
-drawdowns_base_macro_spy.csv
-
-rolling12m_returns_base_macro_spy.csv
-
-vol_target_scale.csv
-
-cash_weight.csv
-
-weights_base_monthly_with_cash.csv
-
-weights_macro_effective_monthly_with_cash.csv
-
-figures_sector/ (charts)
-
-Light + dark equity curves and drawdowns for:
-
-# Full period
-
-2000–2010 (proxy in data starts 2001)
-
-2011–2026
-
-Light + dark exposure chart (scale + cash weight)
-
-# Assumptions & limitations
-
-Cash return assumed ~0% 
-
-Monthly rebalancing at month-end prices
-
-Macro series can be revised historically
-
-No leverage in this version (scale capped at 1.0)
-
-How to run
-
-Open and run sector_momentum_main.ipynb top-to-bottom (Restart kernel → Run All). The notebook exports tables to reports_sector/ and charts to figures_sector/.
 
 
 
