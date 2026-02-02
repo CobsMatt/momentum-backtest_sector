@@ -1,12 +1,12 @@
 # Macro-Aware Sector Rotation Strategy (2001–2026)
 
 ### **Executive Summary**
-This project implements a systematic **US Sector Rotation Strategy** designed to outperform the S&P 500 on a risk-adjusted basis. By combining **Cross-Sectional Momentum** with a **Macro-Economic Risk Overlay**, the strategy is able to capture upside trends while mechanically reducing exposure during recessionary regimes.
+This project implements a systematic **US Sector Rotation Strategy** designed to improve risk adjusted returns vs the S&P 500. By combining **Cross-Sectional Momentum** with a **Macro-Economic Risk Overlay**, the strategy is able to capture upside trends while mechanically reducing exposure during recessionary regimes.
 
 **Key Performance Highlights (Feb 2001 – Jan 2026):**
 * **Superior Efficiency:** Achieved a **Sharpe Ratio of 0.63**, outperforming the S&P 500 (0.61).
 * **Capital Preservation:** Reduced the Max Drawdown to **-33.4%**, providing a significant safety buffer compared to the S&P 500's **-50.8%** crash.
-* **Crisis Alpha:** Successfully identified and minimised losses during the 2001 Dot-Com crash and the 2008 Financial Crisis.
+* **Drawdown Control:** Successfully identified and minimised losses during the 2001 Dot-Com crash and the 2008 Financial Crisis.
 
 ---
 
@@ -35,7 +35,7 @@ This project implements a systematic **US Sector Rotation Strategy** designed to
 #### **2. The Risk Engine: Macro Overlay (Dual Signal)**
 To solve the "drawdown problem" of pure momentum, I implemented a dynamic risk overlay:
 * **Signal 1: Yield Curve Inversion (10Y-3M):** Monitors the spread between the 10-Year Treasury and 3-Month Treasury, a preferred recession predictor of the NY Fed.
-* **Signal 2: Leading Economic Index (LEI):** Tracks the YoY change in the Conference Board's LEI.
+* **Signal 2: Leading Economic Index (LEI):** Tracks the 6 month change in the Conference Board's LEI.
 * **Mechanism:**
     * **Growth Regime:** If signals are healthy, Target **15% Volatility** (Aggressive).
     * **Defensive Regime:** If the Yield Curve inverts AND LEI contacts, Target **10% Volatility** (Defensive).
@@ -62,6 +62,7 @@ By trading "excess" volatility for stability, the strategy is able to offer a sm
 * `sector_momentum_main.ipynb`: The complete backtesting code.
 * `figures_sector/`: Generated charts (Equity Curves, Drawdown Profiles).
 * `reports_sector/`: Raw CSV outputs of monthly returns and statistics.
+
 
 
 
